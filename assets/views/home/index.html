@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ app_name }}</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 720px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.6;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .version { color: #888; font-size: 0.9rem; margin-top: 0; }
+    code { background: rgba(127, 127, 127, 0.15); padding: 0.15rem 0.4rem; border-radius: 4px; }
+    ul { padding-left: 1.25rem; }
+    a { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <h1>{{ app_name }}</h1>
+  <p class="version">v{{ app_version }}</p>
+
+  <p>
+    Backend Loco (Rust) cho ứng dụng SaaS: xác thực JWT, mailer, background
+    worker, và Tera view engine cho server-side rendering.
+  </p>
+
+  <h2>Thử ngay</h2>
+  <ul>
+    <li>
+      <a href="/hello">/hello</a> &mdash; trang demo render bằng Tera + i18n
+      (Fluent)
+    </li>
+  </ul>
+
+  <h2>API Auth</h2>
+  <ul>
+    <li><code>POST /api/auth/register</code></li>
+    <li><code>GET&nbsp;&nbsp;/api/auth/verify/:token</code></li>
+    <li><code>POST /api/auth/login</code></li>
+    <li><code>POST /api/auth/forgot</code></li>
+    <li><code>POST /api/auth/reset</code></li>
+    <li><code>GET&nbsp;&nbsp;/api/auth/current</code> (yêu cầu Bearer JWT)</li>
+    <li><code>POST /api/auth/magic-link</code></li>
+    <li><code>GET&nbsp;&nbsp;/api/auth/magic-link/:token</code></li>
+    <li><code>POST /api/auth/resend-verification-mail</code></li>
+  </ul>
+</body>
+</html>
