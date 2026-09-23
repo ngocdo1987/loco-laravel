@@ -2,9 +2,10 @@
 
 A [Loco](https://loco.rs) (Rust web framework, Laravel/Rails-style) **SaaS
 starter**: JWT-based authentication (register, email verification, login,
-forgot/reset password, magic-link login) on top of Sea-ORM, with a
-Redis-backed background worker, server-side rendering via Tera + Fluent
-i18n, and a typed API/DTO layer (`ts-rs`) for a future SPA frontend.
+forgot/reset password, magic-link login) on top of Sea-ORM, exposed both as
+a JSON API and as server-rendered login/register pages (Tera), with a
+Redis-backed background worker, i18n via Fluent, and a typed API/DTO layer
+(`ts-rs`) for a future SPA frontend.
 
 Feature code is organized **by module** (one folder per feature under
 `src/modules/<name>/`), not by Loco's default layer-first layout — see
@@ -37,6 +38,8 @@ This boots the server (default `http://localhost:5150`, override with
 |---|---|
 | `GET /` | Landing page (Tera) listing the demo route and API endpoints |
 | `GET /hello` | Tera + Fluent i18n rendering demo |
+| `GET`/`POST /login`, `GET`/`POST /register`, `POST /logout` | Browser-facing auth pages (Tera forms) — same JWT as the API below, carried in an `auth_token` cookie instead of JSON |
+| `GET /dashboard` | Logged-in landing page for the web pages above; redirects to `/login` if not authenticated |
 | `POST /api/auth/register` | Create an account, sends a welcome/verification email |
 | `GET /api/auth/verify/{token}` | Verify an email address |
 | `POST /api/auth/login` | Password login, returns a JWT |

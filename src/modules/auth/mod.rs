@@ -5,6 +5,7 @@ pub mod requests;
 pub mod routes;
 pub mod tasks;
 pub mod views;
+pub mod web;
 
 pub struct AuthModule;
 
@@ -13,7 +14,7 @@ impl super::Module for AuthModule {
         "auth"
     }
 
-    fn routes(&self) -> loco_rs::controller::Routes {
-        routes::routes()
+    fn routes(&self) -> Vec<loco_rs::controller::Routes> {
+        vec![routes::routes(), routes::web_routes()]
     }
 }

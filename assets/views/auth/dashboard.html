@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 480px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.6;
+    }
+    h1 { margin-bottom: 0.5rem; }
+    dl { margin: 1.5rem 0; }
+    dt { font-weight: 600; color: #888; font-size: 0.85rem; text-transform: uppercase; }
+    dd { margin: 0 0 1rem; }
+    button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid #888;
+      border-radius: 4px;
+      background: transparent;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dashboard</h1>
+  <p>You are logged in.</p>
+
+  <dl>
+    <dt>Name</dt>
+    <dd>{{ name }}</dd>
+    <dt>Email</dt>
+    <dd>{{ email }}</dd>
+    <dt>PID</dt>
+    <dd>{{ pid }}</dd>
+  </dl>
+
+  <form method="post" action="/logout">
+    <button type="submit">Logout</button>
+  </form>
+</body>
+</html>

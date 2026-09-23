@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 420px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.6;
+    }
+    h1 { margin-bottom: 1.5rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #888;
+      border-radius: 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 0.5rem 1.25rem;
+      border: 0;
+      border-radius: 4px;
+      background: #2563eb;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .error {
+      background: rgba(220, 38, 38, 0.12);
+      color: #b91c1c;
+      padding: 0.6rem 0.9rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    a { color: #2563eb; }
+    .links { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Register</h1>
+
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  <form method="post" action="/register">
+    <label for="name">Name</label>
+    <input id="name" name="name" value="{{ name }}" required minlength="2" maxlength="255" />
+
+    <label for="email">Email</label>
+    <input id="email" type="email" name="email" value="{{ email }}" required maxlength="255" />
+
+    <label for="password">Password</label>
+    <input id="password" type="password" name="password" required maxlength="255" />
+
+    <button type="submit">Register</button>
+  </form>
+
+  <p class="links">Already have an account? <a href="/login">Login</a></p>
+</body>
+</html>
