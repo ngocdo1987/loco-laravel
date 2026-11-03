@@ -1,1 +1,2 @@
+mod blog;
 mod users;

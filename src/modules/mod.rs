@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod blog;
 
 use loco_rs::controller::{AppRoutes, Routes};
 
@@ -15,7 +16,7 @@ pub trait Module {
 }
 
 fn registry() -> Vec<Box<dyn Module>> {
-    vec![Box::new(auth::AuthModule)]
+    vec![Box::new(auth::AuthModule), Box::new(blog::BlogModule)]
 }
 
 /// Fold every registered module's route groups into `AppRoutes`, replacing a
