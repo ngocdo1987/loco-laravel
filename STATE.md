@@ -12,8 +12,6 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S3. Blog fixtures/seeders (category, tag, post, comment).
-      Source: `database/seeders/{category,tag,post,comment}_seeder.go`
 - [ ] S4. Public read API — GET `/api/posts`, `/api/posts/{slug}`,
       `/api/posts/{slug}/comments`, `/api/categories`, `/api/tags`.
       Source: `app/modules/blog/routes.go` (public block)
@@ -72,6 +70,12 @@ Monitor only — do not act.
       relations loading (PostWithRelations), Comment pending|approved|
       rejected, response DTOs with goravel JSON parity; 3 model tests;
       verifier APPROVE, loop-gate ALLOWED (commit d484e35)
+- [x] S3. Blog fixtures/seeders — 5 categories, 6 tags, 3 posts, 8 post-tag
+      links, 4 comments and 3 demo users matching Goravel; transactional,
+      repeatable blog seeding through the Loco seed hook. Independent verifier
+      APPROVE; 41 MySQL tests and 5 SQLite fixture tests passed; migration,
+      unchanged routes, fmt, clippy and loop-gate passed (commit 3b047ea).
+      Merged directly into master at the user's explicit request.
 
 ## Recent Noise
 
