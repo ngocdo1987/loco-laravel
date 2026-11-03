@@ -1,4 +1,4 @@
-use chrono::{offset::Local, Duration};
+use chrono::{offset::Local, Duration, SubsecRound};
 use insta::assert_debug_snapshot;
 use loco_laravel::{
     app::App,
@@ -358,6 +358,14 @@ async fn magic_link() {
 
     let now = Local::now();
     let should_expired_at = now + Duration::minutes(users::MAGIC_LINK_EXPIRATION_MIN.into());
+    // MySQL's current timestamp columns round to whole seconds on write.
+    // Compare against the same precision as the persisted expiration.
+    let should_expired_at =
+        if boot.app_context.db.get_database_backend() == sea_orm::DatabaseBackend::MySql {
+            should_expired_at.round_subsecs(0)
+        } else {
+            should_expired_at
+        };
     let actual_expiration = updated_user.magic_link_expiration.unwrap();
 
     assert!(
