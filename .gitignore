@@ -17,6 +17,7 @@ target/
 
 *.sqlite
 *.sqlite-*
+.loop-worktrees/
 
 # ts-rs auto-generates these from `src/dtos/**` on every `cargo test`/`cargo
 # build` (see the `#[ts(export, ...)]` attributes) — regenerate, don't commit.

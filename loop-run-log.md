@@ -20,3 +20,5 @@ Append one entry per run. Prune entries older than 30 days.
 ## Recent Runs
 
 <!-- Loop appends below this line -->
+{"run_id": "2026-11-03T17:33:11Z", "pattern": "pr-babysitter", "duration_s": 2650, "items_found": 1, "actions_taken": 1, "escalations": 1, "tokens_estimate": 300000, "outcome": "fix-proposed"}
+<!-- S1 critique: worked — inline FKs in CREATE TABLE gave real RESTRICT/CASCADE enforcement on the sqlite scratch DB, so parity was provable, not assumed. differently — run the clippy gate on master before slicing (large_futures was latent) and pre-check codegen drift (loco 1.1 now writes src/models/*.rs wrappers) before `db entities` lands inside a slice. -->

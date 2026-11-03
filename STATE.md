@@ -12,9 +12,6 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S1. Blog schema migration — `migration/src/m*_create_blog_tables.rs`:
-      posts, categories, tags, post_tags (m2m), comments; then
-      `cargo loco db entities`. Source: `database/migrations/20260527100000_create_blog_tables.go`
 - [ ] S2. Blog models — `src/modules/blog/models/`: Category, Tag, Post
       (draft|published), Comment (pending|approved|rejected) + response DTOs.
       Source: `app/modules/blog/models/blog.go`
@@ -63,6 +60,12 @@ Monitor only — do not act.
 - [x] Module structure + registry + module convention docs (commit 2c3a737)
 - [x] Auth module complete: password/magic-link/forgot/reset + web UI +
       mailer + task + tests (commits 791596f, 76e9eeb) — superset of goravel auth
+- [x] S1. Blog schema migration — posts, categories, tags, post_tags (m2m
+      composite PK), comments; entities regenerated; FK parity verified on
+      sqlite scratch (RESTRICT category/tag, CASCADE rest); verifier APPROVE
+      (commit f1a2b0c). Notes for S2: post_tags has no single-column PK;
+      loco 1.1 `db entities` now also writes `src/models/*.rs` wrappers (users
+      wrapper is a re-export shim — auth owns its ActiveModelBehavior)
 
 ## Recent Noise
 
