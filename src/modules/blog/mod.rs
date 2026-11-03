@@ -1,4 +1,5 @@
 pub mod models;
+pub mod seeders;
 
 pub struct BlogModule;
 

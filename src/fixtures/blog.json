@@ -1,0 +1,136 @@
+{
+  "users": [
+    {
+      "name": "Admin User",
+      "email": "admin@example.com"
+    },
+    {
+      "name": "Author User",
+      "email": "author@example.com"
+    },
+    {
+      "name": "Reader User",
+      "email": "reader@example.com"
+    }
+  ],
+  "categories": [
+    {
+      "name": "Engineering",
+      "slug": "engineering"
+    },
+    {
+      "name": "Product",
+      "slug": "product"
+    },
+    {
+      "name": "Company",
+      "slug": "company"
+    },
+    {
+      "name": "Tutorials",
+      "slug": "tutorials"
+    },
+    {
+      "name": "Announcements",
+      "slug": "announcements"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Go",
+      "slug": "go"
+    },
+    {
+      "name": "Goravel",
+      "slug": "goravel"
+    },
+    {
+      "name": "Nuxt",
+      "slug": "nuxt"
+    },
+    {
+      "name": "API",
+      "slug": "api"
+    },
+    {
+      "name": "Authentication",
+      "slug": "authentication"
+    },
+    {
+      "name": "REST",
+      "slug": "rest"
+    }
+  ],
+  "posts": [
+    {
+      "author_email": "author@example.com",
+      "category_slug": "engineering",
+      "slug": "getting-started-with-goravel",
+      "title": "Getting Started with Goravel",
+      "excerpt": "Build a small REST API with Goravel, migrations, validation, and services.",
+      "cover_image_url": "",
+      "content_html": "<p>Goravel gives Go applications a Laravel-style structure for routing, controllers, services, ORM models, and database migrations.</p><p>This seeded post is published so the public Nuxt feed has content to render.</p>",
+      "tag_slugs": [
+        "go",
+        "goravel",
+        "api"
+      ],
+      "status": "published"
+    },
+    {
+      "author_email": "admin@example.com",
+      "category_slug": "product",
+      "slug": "nuxt-frontend-for-goravel-api",
+      "title": "Nuxt Frontend for the Goravel API",
+      "excerpt": "Connect Nuxt pages to the Goravel blog and authentication REST endpoints.",
+      "cover_image_url": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
+      "content_html": "<p>The Nuxt frontend consumes the Goravel API for public posts, authenticated author workflows, taxonomy management, and comment moderation.</p><p>Seeded content makes local integration checks easier after migrations.</p>",
+      "tag_slugs": [
+        "nuxt",
+        "rest",
+        "authentication"
+      ],
+      "status": "published"
+    },
+    {
+      "author_email": "author@example.com",
+      "category_slug": "tutorials",
+      "slug": "draft-api-testing-checklist",
+      "title": "Draft API Testing Checklist",
+      "excerpt": "A draft article visible only to its author in the dashboard.",
+      "cover_image_url": "",
+      "content_html": "<p>Keep endpoint tests isolated, avoid truncating shared tables, and verify authentication flows with realistic fixtures.</p>",
+      "tag_slugs": [
+        "go",
+        "rest"
+      ],
+      "status": "draft"
+    }
+  ],
+  "comments": [
+    {
+      "post_slug": "getting-started-with-goravel",
+      "author_email": "reader@example.com",
+      "content": "This helped me understand how the Goravel pieces fit together.",
+      "status": "approved"
+    },
+    {
+      "post_slug": "getting-started-with-goravel",
+      "author_email": "admin@example.com",
+      "content": "Could you add a follow-up about deployment configuration?",
+      "status": "pending"
+    },
+    {
+      "post_slug": "nuxt-frontend-for-goravel-api",
+      "author_email": "reader@example.com",
+      "content": "The Nuxt integration notes are useful for local API testing.",
+      "status": "approved"
+    },
+    {
+      "post_slug": "nuxt-frontend-for-goravel-api",
+      "author_email": "author@example.com",
+      "content": "This comment is intentionally rejected for moderation workflow testing.",
+      "status": "rejected"
+    }
+  ]
+}

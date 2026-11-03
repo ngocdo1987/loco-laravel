@@ -86,6 +86,7 @@ impl Hooks for App {
                 Ok(())
             }
             other => other,
-        }
+        }?;
+        modules::blog::seeders::seed(ctx, base).await
     }
 }
