@@ -67,3 +67,22 @@ cargo loco doctor           # check the environment
 - Framework agent guide: https://loco.rs/AGENTS.md
 - Full single-file reference: https://loco.rs/llms-full.txt
 - Docs: https://loco.rs/docs
+
+## Loop operation (goravel → loco migration)
+
+- This repo is being ported from `goravel_base` (read-only reference at
+  `/home/ubuntu/projects/GOLANG/goravel_base`) under a loop-engineering
+  refactor loop. **Read `STATE.md` first** — High Priority is the ordered
+  slice queue (S1…S12); one slice = one worktree = one PR.
+- Loop skills live in `skills/`: follow `skills/minimal-fix/SKILL.md` when
+  implementing a slice, and `skills/loop-verifier/SKILL.md` when checking one
+  (fresh session, default REJECT, run the project gates yourself).
+  `skills/loop-guard` + `loop-ledger.json` are the circuit breaker — run
+  `npx @cobusgreyling/loop-context --check --ledger loop-ledger.json --token-budget 500000` before
+  any retry.
+- Verifier gates for every slice are listed in `LOOP.md` (fmt, clippy, tests,
+  migrate, routes) plus `npx @cobusgreyling/loop-gate check` for diff scope.
+- Never edit `gate.yaml` denylist paths (auth module, config, Cargo files,
+  generated entities, migrations) without explicit human approval.
+- Check `loop-budget.md` daily cap before starting a slice; check `STATE.md`
+  for the `LOOP PAUSED` kill-switch flag.

@@ -1,0 +1,6 @@
+{
+  "goal": "Port the goravel_base blog module into loco-laravel as slices S1-S12 in STATE.md — every slice verified (cargo gates + parity) and human-merged",
+  "pattern": "pr-babysitter",
+  "level": "L2",
+  "attempts": []
+}

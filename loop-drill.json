@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "tool": "@cobusgreyling/loop-drill",
+  "guardrails": {
+    "breaker": {
+      "recordedAt": "2026-11-03T16:56:44.155Z",
+      "results": [
+        {
+          "id": "breaker.stagnation",
+          "failureMode": "Infinite Fix Loop",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "breaker.no-progress",
+          "failureMode": "Infinite Fix Loop",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "breaker.token-budget",
+          "failureMode": "Token Burn",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "breaker.healthy",
+          "failureMode": "Infinite Fix Loop",
+          "direction": "specificity",
+          "outcome": "passed"
+        }
+      ]
+    },
+    "gate": {
+      "recordedAt": "2026-11-03T16:56:44.155Z",
+      "results": [
+        {
+          "id": "gate.denylist[src/modules/auth/**]",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.denylist[config/*.yaml]",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.denylist[config/*.yml]",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.denylist[**/.env*]",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.denylist[Cargo.toml]",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.denylist[Cargo.lock]",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.denylist[src/models/_entities/**]",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.denylist[migration/**]",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.file-count",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.auto-merge",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "sensitivity",
+          "outcome": "passed"
+        },
+        {
+          "id": "gate.benign",
+          "failureMode": "Over-Reach (Wrong Scope)",
+          "direction": "specificity",
+          "outcome": "passed"
+        }
+      ],
+      "input": {
+        "file": "gate.yaml",
+        "sha256": "0a6bd37c9ce3dafa7b2e1531e4b8581cd6348bd717c2d7bb983fb19b93ed23ee"
+      }
+    }
+  }
+}

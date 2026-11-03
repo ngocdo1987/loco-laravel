@@ -28,6 +28,7 @@ migration = { path = "migration" }
 sea-orm = { version = "2.0", features = [
   "sqlx-sqlite",
   "sqlx-postgres",
+  "sqlx-mysql",
   "runtime-tokio-rustls",
   "macros",
 ] }

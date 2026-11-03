@@ -1,0 +1,26 @@
+# Loop gate policy for the goravel → loco migration.
+# Machine-checked by: npx @cobusgreyling/loop-gate check --action <commit|auto-merge> --paths <files>
+# Keep in sync with LOOP.md "Safety & gates".
+version: 1
+
+denylist:
+  # auth module is DONE and frozen — do not touch during the blog port
+  - "src/modules/auth/**"
+  # env/secrets wiring — human review required
+  - "config/*.yaml"
+  - "config/*.yml"
+  - "**/.env*"
+  # new crates are a human decision
+  - "Cargo.toml"
+  - "Cargo.lock"
+  # sea-orm-codegen owned — regenerated, never hand-edited
+  - "src/models/_entities/**"
+  # migrations are schema changes — every one needs explicit human review
+  - "migration/**"
+
+maxFiles: 10
+
+autoMergeAllowlist:
+  - "tests/**"
+  - "docs/**"
+  - "**/*.md"
