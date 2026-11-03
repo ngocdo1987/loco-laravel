@@ -12,9 +12,6 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S2. Blog models — `src/modules/blog/models/`: Category, Tag, Post
-      (draft|published), Comment (pending|approved|rejected) + response DTOs.
-      Source: `app/modules/blog/models/blog.go`
 - [ ] S3. Blog fixtures/seeders (category, tag, post, comment).
       Source: `database/seeders/{category,tag,post,comment}_seeder.go`
 - [ ] S4. Public read API — GET `/api/posts`, `/api/posts/{slug}`,
@@ -45,6 +42,11 @@ Work top-down — S1 first. One slice = one worktree = one PR = one independent 
 
 Monitor only — do not act.
 
+- Pre-existing clippy debt (found by S2 verifier): `cargo clippy
+  --all-features --all-targets` fails with 3 `future_not_send` pedantic
+  errors in `tests/requests/prepare_data.rs`. The LOOP.md gate (no
+  `--all-targets`) passes; clean up in a later slice before it bites
+
 - Goravel's Module interface carries `Dependencies()`/enable-disable +
   `Seeders()`; `docs/modules.md` deliberately deferred them — revisit when
   blog lands (blog genuinely depends on auth)
@@ -66,6 +68,10 @@ Monitor only — do not act.
       (commit f1a2b0c). Notes for S2: post_tags has no single-column PK;
       loco 1.1 `db entities` now also writes `src/models/*.rs` wrappers (users
       wrapper is a re-export shim — auth owns its ActiveModelBehavior)
+- [x] S2. Blog models — Category/Tag finders, Post draft|published +
+      relations loading (PostWithRelations), Comment pending|approved|
+      rejected, response DTOs with goravel JSON parity; 3 model tests;
+      verifier APPROVE, loop-gate ALLOWED (commit d484e35)
 
 ## Recent Noise
 
