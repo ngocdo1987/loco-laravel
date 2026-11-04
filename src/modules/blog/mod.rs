@@ -1,4 +1,5 @@
 mod author;
+mod comments;
 mod controllers;
 pub mod models;
 mod requests;
@@ -24,6 +25,17 @@ impl super::Module for BlogModule {
             .add("/me/posts/{id}", delete(author::destroy))
             .add("/posts/{slug}", get(controllers::show))
             .add("/posts/{slug}/comments", get(controllers::comments))
+            .add("/posts/{slug}/comments", post(comments::submit))
+            .add("/comments/{id}", delete(comments::delete_own))
+            .add("/me/posts/{id}/comments", get(comments::queue))
+            .add(
+                "/me/posts/{id}/comments/{comment_id}",
+                patch(comments::moderate),
+            )
+            .add(
+                "/me/posts/{id}/comments/{comment_id}",
+                delete(comments::delete_moderated),
+            )
             .add("/categories", get(controllers::categories))
             .add("/categories", post(taxonomy::create_category))
             .add("/categories/{id}", patch(taxonomy::update_category))

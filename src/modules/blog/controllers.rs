@@ -72,7 +72,7 @@ pub(super) fn validation(field: &str, message: &str) -> Response {
         .into_response()
 }
 
-async fn published(db: &DatabaseConnection, slug: &str) -> Result<Option<posts::Model>> {
+pub(super) async fn published(db: &DatabaseConnection, slug: &str) -> Result<Option<posts::Model>> {
     Ok(posts::Entity::find()
         .filter(posts::Column::Slug.eq(slug))
         .filter(posts::Column::Status.eq(post::STATUS_PUBLISHED))

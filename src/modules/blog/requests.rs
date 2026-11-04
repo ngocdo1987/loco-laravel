@@ -159,6 +159,56 @@ pub(super) fn slugify(value: &str) -> String {
     }
 }
 
+/// `ValidateComment` — content is trimmed, required, max 2000 characters.
+#[derive(Deserialize)]
+pub(super) struct CommentInput {
+    #[serde(default, deserialize_with = "null_string")]
+    pub(super) content: String,
+}
+
+impl CommentInput {
+    pub(super) fn parse(value: Value) -> std::result::Result<Self, InputError> {
+        if !value.is_object() {
+            return Err(InputError::Payload);
+        }
+        let mut input: Self = serde_json::from_value(value).map_err(|_| InputError::Payload)?;
+        trim(&mut input.content);
+        if input.content.is_empty() {
+            return Err(InputError::Field("content", "is required"));
+        }
+        if input.content.chars().count() > 2000 {
+            return Err(InputError::Field(
+                "content",
+                "exceeds the maximum length of 2000 characters",
+            ));
+        }
+        Ok(input)
+    }
+}
+
+/// `ValidateModeration` — status is required and approved or rejected.
+#[derive(Deserialize)]
+pub(super) struct ModerationInput {
+    #[serde(default, deserialize_with = "null_string")]
+    pub(super) status: String,
+}
+
+impl ModerationInput {
+    pub(super) fn parse(value: Value) -> std::result::Result<Self, InputError> {
+        if !value.is_object() {
+            return Err(InputError::Payload);
+        }
+        let input: Self = serde_json::from_value(value).map_err(|_| InputError::Payload)?;
+        if input.status.is_empty() {
+            return Err(InputError::Field("status", "is required"));
+        }
+        if !matches!(input.status.as_str(), "approved" | "rejected") {
+            return Err(InputError::Field("status", "must be approved or rejected"));
+        }
+        Ok(input)
+    }
+}
+
 #[derive(Deserialize)]
 pub(super) struct TaxonomyInput {
     #[serde(default, deserialize_with = "null_string")]
