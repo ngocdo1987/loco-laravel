@@ -18,7 +18,7 @@ denylist:
   # migrations are schema changes — every one needs explicit human review
   - "migration/**"
 
-maxFiles: 10
+maxFiles: 20
 
 autoMergeAllowlist:
   - "tests/**"

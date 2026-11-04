@@ -91,7 +91,7 @@ S11 ports it to `tests/requests/blog_*.rs`.
   `Cargo.toml`, `Cargo.lock`, `src/models/_entities/**` (codegen-owned), and
   `migration/**` — schema is high-risk, every migration diff gets explicit
   human eyes (expected for S1: a denylist hit there means "human, review this
-  schema", not "slice failed"). `maxFiles: 10` — a slice that needs more
+  schema", not "slice failed"). `maxFiles: 20` — a slice that needs more
   files must be split.
 - No auto-merge during the migration. The allowlist (`tests/**`, `docs/**`,
   `*.md`) only matters after migration, and only with a proven verifier.

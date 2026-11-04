@@ -18,14 +18,15 @@ pub(super) struct ListQuery {
     q: Option<String>,
     category: Option<String>,
     tag: Option<String>,
+    pub(super) status: Option<String>,
 }
 
 #[derive(Serialize)]
-struct Paginated<T> {
-    data: Vec<T>,
-    page: u64,
-    limit: u64,
-    total: u64,
+pub(super) struct Paginated<T> {
+    pub(super) data: Vec<T>,
+    pub(super) page: u64,
+    pub(super) limit: u64,
+    pub(super) total: u64,
 }
 
 // Goravel's QueryInt uses the default for absent/empty values and zero
@@ -37,7 +38,9 @@ fn query_integer(value: Option<&str>, default: i64) -> i64 {
 }
 
 impl ListQuery {
-    fn pagination(&self) -> std::result::Result<(u64, u64), (&'static str, &'static str)> {
+    pub(super) fn pagination(
+        &self,
+    ) -> std::result::Result<(u64, u64), (&'static str, &'static str)> {
         let page = query_integer(self.page.as_deref(), 1);
         let limit = query_integer(self.limit.as_deref(), 20);
         if page < 1
@@ -58,7 +61,7 @@ impl ListQuery {
     }
 }
 
-fn validation(field: &str, message: &str) -> Response {
+pub(super) fn validation(field: &str, message: &str) -> Response {
     (
         axum::http::StatusCode::UNPROCESSABLE_ENTITY,
         Json(serde_json::json!({
@@ -77,7 +80,7 @@ async fn published(db: &DatabaseConnection, slug: &str) -> Result<Option<posts::
         .await?)
 }
 
-fn missing() -> Result<Response> {
+pub(super) fn missing() -> Result<Response> {
     format::render()
         .status(axum::http::StatusCode::NOT_FOUND)
         .json(serde_json::json!({"message": "Resource not found"}))
@@ -164,10 +167,10 @@ pub(super) async fn index(
     })
 }
 
-fn public_post(loaded: post::PostWithRelations) -> PostResponse {
+pub(super) fn public_post(loaded: post::PostWithRelations) -> PostResponse {
     let mut response = PostResponse::from(loaded);
     // S4 is read-only: also protect clients from existing/imported HTML.
-    // Write-time sanitization belongs to the author API in S5.
+    // The author API also sanitizes new HTML before persistence.
     response.content_html = ammonia::clean(&response.content_html);
     response
 }
