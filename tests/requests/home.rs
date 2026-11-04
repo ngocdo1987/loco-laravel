@@ -2,8 +2,9 @@ use loco_laravel::app::App;
 use loco_rs::testing::prelude::*;
 use serial_test::serial;
 
-/// Exercises the home page route: it must exist (no more falling through to
-/// the router-level 404 fallback) and list the demo/API links.
+/// Exercises the home page route: since S9 the blog home (`modules::blog::web`)
+/// serves `/` with the published-post feed — the starter landing page moved
+/// aside (only `/hello` remains in `controllers::home`).
 #[tokio::test]
 #[serial]
 async fn can_get_home_view() {
@@ -11,8 +12,7 @@ async fn can_get_home_view() {
         let res = request.get("/").await;
 
         assert_eq!(res.status_code(), 200);
-        assert!(res.text().contains("/hello"));
-        assert!(res.text().contains("/api/auth/register"));
+        assert!(res.text().contains("Latest posts"));
     })
     .await;
 }

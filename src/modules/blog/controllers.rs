@@ -12,12 +12,12 @@ use crate::models::_entities::{categories, comments, post_tags, posts, tags, use
 
 #[derive(Default, Deserialize)]
 pub(super) struct ListQuery {
-    page: Option<String>,
-    limit: Option<String>,
-    author_id: Option<String>,
-    q: Option<String>,
-    category: Option<String>,
-    tag: Option<String>,
+    pub(super) page: Option<String>,
+    pub(super) limit: Option<String>,
+    pub(super) author_id: Option<String>,
+    pub(super) q: Option<String>,
+    pub(super) category: Option<String>,
+    pub(super) tag: Option<String>,
     pub(super) status: Option<String>,
 }
 
@@ -86,14 +86,15 @@ pub(super) fn missing() -> Result<Response> {
         .json(serde_json::json!({"message": "Resource not found"}))
 }
 
-pub(super) async fn index(
-    State(ctx): State<AppContext>,
-    Query(query): Query<ListQuery>,
-) -> Result<Response> {
-    let (page, limit) = match query.pagination() {
-        Ok(p) => p,
-        Err((field, message)) => return Ok(validation(field, message)),
-    };
+/// Published-post feed shared by the public API (`/api/posts`) and the web
+/// pages: q/category/tag/author filters + pagination, sanitized responses.
+/// Returns the page rows and the total count.
+pub(super) async fn feed(
+    db: &DatabaseConnection,
+    query: &ListQuery,
+    page: u64,
+    limit: u64,
+) -> Result<(Vec<PostResponse>, u64)> {
     let mut select = posts::Entity::find().filter(posts::Column::Status.eq(post::STATUS_PUBLISHED));
     if let Some(term) = query.q.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
         let term = format!("%{term}%");
@@ -151,14 +152,50 @@ pub(super) async fn index(
     let pager = select
         .order_by_desc(posts::Column::PublishedAt)
         .order_by_desc(posts::Column::Id)
-        .paginate(&ctx.db, limit);
+        .paginate(db, limit);
     let total = pager.num_items().await?;
     let mut data = Vec::new();
     for row in pager.fetch_page(page - 1).await? {
-        data.push(public_post(
-            post::Model::load_relations(&ctx.db, row).await?,
-        ));
+        data.push(public_post(post::Model::load_relations(db, row).await?));
     }
+    Ok((data, total))
+}
+
+/// Approved comments for a post (shared by `/api/posts/{slug}/comments` and
+/// the web post page). Returns the page rows and the total count.
+pub(super) async fn approved_comments(
+    db: &DatabaseConnection,
+    post_id: i64,
+    page: u64,
+    limit: u64,
+) -> Result<(Vec<CommentResponse>, u64)> {
+    let pager = comments::Entity::find()
+        .filter(comments::Column::PostId.eq(post_id))
+        .filter(comments::Column::Status.eq(comment::STATUS_APPROVED))
+        .order_by_asc(comments::Column::CreatedAt)
+        .order_by_asc(comments::Column::Id)
+        .paginate(db, limit);
+    let total = pager.num_items().await?;
+    let mut data = Vec::new();
+    for row in pager.fetch_page(page - 1).await? {
+        let author = users::Entity::find_by_id(row.author_id)
+            .one(db)
+            .await?
+            .ok_or(ModelError::EntityNotFound)?;
+        data.push(CommentResponse::new(&row, &author, false));
+    }
+    Ok((data, total))
+}
+
+pub(super) async fn index(
+    State(ctx): State<AppContext>,
+    Query(query): Query<ListQuery>,
+) -> Result<Response> {
+    let (page, limit) = match query.pagination() {
+        Ok(p) => p,
+        Err((field, message)) => return Ok(validation(field, message)),
+    };
+    let (data, total) = feed(&ctx.db, &query, page, limit).await?;
     format::json(Paginated {
         data,
         page,
@@ -199,21 +236,7 @@ pub(super) async fn comments(
     let Some(row) = published(&ctx.db, &slug).await? else {
         return missing();
     };
-    let pager = comments::Entity::find()
-        .filter(comments::Column::PostId.eq(row.id))
-        .filter(comments::Column::Status.eq(comment::STATUS_APPROVED))
-        .order_by_asc(comments::Column::CreatedAt)
-        .order_by_asc(comments::Column::Id)
-        .paginate(&ctx.db, limit);
-    let total = pager.num_items().await?;
-    let mut data = Vec::new();
-    for row in pager.fetch_page(page - 1).await? {
-        let author = users::Entity::find_by_id(row.author_id)
-            .one(&ctx.db)
-            .await?
-            .ok_or(ModelError::EntityNotFound)?;
-        data.push(CommentResponse::new(&row, &author, false));
-    }
+    let (data, total) = approved_comments(&ctx.db, row.id, page, limit).await?;
     format::json(Paginated {
         data,
         page,
