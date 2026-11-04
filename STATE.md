@@ -12,9 +12,6 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S4. Public read API — GET `/api/posts`, `/api/posts/{slug}`,
-      `/api/posts/{slug}/comments`, `/api/categories`, `/api/tags`.
-      Source: `app/modules/blog/routes.go` (public block)
 - [ ] S5. Author write API (JWT) — POST `/api/posts` + `/api/me/posts` CRUD.
       Source: routes.go protected block; ownership + slug-uniqueness rules in
       `app/modules/blog/services/blog_service.go`
@@ -48,8 +45,8 @@ Monitor only — do not act.
 - Goravel's Module interface carries `Dependencies()`/enable-disable +
   `Seeders()`; `docs/modules.md` deliberately deferred them — revisit when
   blog lands (blog genuinely depends on auth)
-- Post HTML sanitization (bluemonday in goravel) — choose the Rust equivalent
-  during S4/S5; never expose unsanitized HTML from new endpoints
+- Post HTML sanitization: S4 uses ammonia 4.2.4 on public responses;
+  S5 must also sanitize before persistence (bluemonday parity)
 - DB dialect: goravel=MySQL/uint IDs, loco=Postgres/i64 IDs; `carbon.DateTime`
   → `timestamp with time zone`; map types explicitly in S1
 - Goravel server-rendered forms use its own view helpers; port to Tera+i18n
@@ -76,6 +73,13 @@ Monitor only — do not act.
       APPROVE; 41 MySQL tests and 5 SQLite fixture tests passed; migration,
       unchanged routes, fmt, clippy and loop-gate passed (commit 3b047ea).
       Merged directly into master at the user's explicit request.
+
+- [x] S4. Public read API — five endpoints, filtering/pagination, published-only
+      posts and approved-only comments; response HTML sanitized with ammonia
+      4.2.4. Independent verifier APPROVE; all 45 MySQL tests, fmt, clippy,
+      clean MySQL migration and routes passed. Cargo dependency gate exception
+      explicitly approved by the user. Commit 57d309e; merged directly into
+      master at the user's explicit request.
 
 ## Recent Noise
 
