@@ -12,8 +12,6 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S7. Comments API — submit (pending), delete-own, moderation queue,
-      moderate, delete-moderated (5 endpoints)
 - [ ] S8. Uploads API — `/api/uploads/images`, `/api/uploads/post-covers`,
       `/api/me/posts/{id}/cover`. Decision: use loco `ctx.storage` (not the
       goravel storage facade). Source: blog_service.go upload paths
@@ -90,6 +88,16 @@ Monitor only — do not act.
       APPROVE; all 58 MySQL tests, fmt, clippy, clean MySQL migration, routes
       and loop-gate passed; 5 implementation files, no denylist exceptions.
       Commit ae1350c; merged directly into master at the user's explicit request.
+
+- [x] S7. Comments API — five JWT endpoints: submit (pending start,
+      published-post-only, trimmed ≤2000-char content), delete-own, owner
+      moderation queue (status filter + pagination), moderate
+      (approved/rejected), delete-moderated; goravel parity for status codes,
+      404 ownership and validation error shapes. Independent verifier APPROVE;
+      all 62 MySQL tests, fmt, clippy, clean MySQL migration, routes (+5, none
+      lost) and loop-gate passed; 5 files, no denylist exceptions (MySQL
+      config kept uncommitted in worktrees, as in S4–S6). Commit f4060a9;
+      merged directly into master at the user's explicit request.
 
 ## Recent Noise
 
