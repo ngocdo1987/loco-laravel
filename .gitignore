@@ -22,3 +22,5 @@ target/
 # ts-rs auto-generates these from `src/dtos/**` on every `cargo test`/`cargo
 # build` (see the `#[ts(export, ...)]` attributes) — regenerate, don't commit.
 frontend/src/bindings/
+# uploaded public disk (uploads slice) — test/runtime artifacts
+storage/

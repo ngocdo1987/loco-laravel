@@ -13,10 +13,10 @@ use crate::models::_entities::{categories, post_tags, posts, tags, users};
 
 type Author = auth::JWTWithUser<users::Model>;
 type JsonBody = std::result::Result<Json<Value>, Error>;
-type WriteResult<T> = std::result::Result<T, WriteError>;
+pub(super) type WriteResult<T> = std::result::Result<T, WriteError>;
 
 #[derive(Debug)]
-enum WriteError {
+pub(super) enum WriteError {
     Missing,
     SlugConflict,
     Relations,
@@ -34,7 +34,7 @@ impl From<DbErr> for WriteError {
 }
 
 impl WriteError {
-    fn response(self) -> Result<Response> {
+    pub(super) fn response(self) -> Result<Response> {
         match self {
             Self::Missing => missing(),
             Self::SlugConflict => format::render()
@@ -216,6 +216,28 @@ async fn update_post(
     }
     tx.commit().await?;
     Ok(row)
+}
+
+/// Sets the cover image on an owned post (used by the upload slice's
+/// `/api/me/posts/{id}/cover` endpoint, mirroring goravel's
+/// `UpdatePost` with `Fields: {"cover_image_url"}`).
+pub(super) async fn update_cover(
+    db: &DatabaseConnection,
+    author_id: i64,
+    id: i64,
+    url: &str,
+) -> WriteResult<posts::Model> {
+    update_post(
+        db,
+        author_id,
+        id,
+        &PostInput {
+            cover_image_url: url.to_owned(),
+            fields: std::collections::HashSet::from(["cover_image_url".to_owned()]),
+            ..Default::default()
+        },
+    )
+    .await
 }
 
 #[debug_handler]

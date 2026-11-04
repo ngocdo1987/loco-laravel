@@ -5,6 +5,7 @@ pub mod models;
 mod requests;
 pub mod seeders;
 mod taxonomy;
+mod uploads;
 
 pub struct BlogModule;
 
@@ -23,6 +24,9 @@ impl super::Module for BlogModule {
             .add("/me/posts/{id}", get(author::show))
             .add("/me/posts/{id}", patch(author::update))
             .add("/me/posts/{id}", delete(author::destroy))
+            .add("/me/posts/{id}/cover", post(uploads::cover))
+            .add("/uploads/images", post(uploads::image))
+            .add("/uploads/post-covers", post(uploads::post_cover))
             .add("/posts/{slug}", get(controllers::show))
             .add("/posts/{slug}/comments", get(controllers::comments))
             .add("/posts/{slug}/comments", post(comments::submit))

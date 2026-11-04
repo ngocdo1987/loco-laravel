@@ -44,10 +44,27 @@ impl Hooks for App {
         create_app::<Self, Migrator>(mode, environment, config).await
     }
 
+    /// Wire the public storage disk (goravel parity: local driver rooted at
+    /// `storage/app/public`, exposed as `/storage/{path}` URLs). Kept in code
+    /// rather than config — `config/*.yaml` is on the migration denylist.
+    async fn after_context(ctx: AppContext) -> Result<AppContext> {
+        std::fs::create_dir_all("storage/app/public")?;
+        let driver = loco_rs::storage::drivers::local::new_with_prefix("storage/app/public")
+            .map_err(|error| {
+                tracing::error!(%error, "cannot open public storage disk");
+                loco_rs::Error::string("cannot open public storage disk")
+            })?;
+        Ok(ctx
+            .into_builder()
+            .storage(loco_rs::storage::Storage::single(driver).into())
+            .build())
+    }
+
     async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
-        Ok(vec![Box::new(
-            initializers::view_engine::ViewEngineInitializer,
-        )])
+        Ok(vec![
+            Box::new(initializers::view_engine::ViewEngineInitializer),
+            Box::new(initializers::body_limit::BodyLimitInitializer),
+        ])
     }
 
     fn routes(_ctx: &AppContext) -> AppRoutes {
