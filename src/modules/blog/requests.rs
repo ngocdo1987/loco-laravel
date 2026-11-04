@@ -1,8 +1,10 @@
 use loco_rs::prelude::*;
 
+use regex::Regex;
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 use std::collections::HashSet;
+use std::sync::LazyLock;
 
 use super::controllers::validation;
 
@@ -130,6 +132,53 @@ impl PostInput {
             return Err(InputError::Field(
                 "tag_ids",
                 "must contain unique valid tag identifiers",
+            ));
+        }
+        Ok(input)
+    }
+}
+
+// Go uses simple Unicode lowercasing; full expansion of İ would add a
+// separator per letter and could overflow a taxonomy slug's VARCHAR(120).
+pub(super) fn slugify(value: &str) -> String {
+    static NON_SLUG: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new("[^a-z0-9]+").expect("valid slug regex"));
+    let lower: String = value
+        .trim()
+        .chars()
+        .map(|letter| letter.to_lowercase().next().unwrap_or(letter))
+        .collect();
+    let slug = NON_SLUG
+        .replace_all(&lower, "-")
+        .trim_matches('-')
+        .to_owned();
+    if slug.is_empty() {
+        "item".to_owned()
+    } else {
+        slug
+    }
+}
+
+#[derive(Deserialize)]
+pub(super) struct TaxonomyInput {
+    #[serde(default, deserialize_with = "null_string")]
+    pub(super) name: String,
+}
+
+impl TaxonomyInput {
+    pub(super) fn parse(value: Value) -> std::result::Result<Self, InputError> {
+        if !value.is_object() {
+            return Err(InputError::Payload);
+        }
+        let mut input: Self = serde_json::from_value(value).map_err(|_| InputError::Payload)?;
+        trim(&mut input.name);
+        if input.name.is_empty() {
+            return Err(InputError::Field("name", "is required"));
+        }
+        if input.name.chars().count() > 100 {
+            return Err(InputError::Field(
+                "name",
+                "exceeds the maximum length of 100 characters",
             ));
         }
         Ok(input)

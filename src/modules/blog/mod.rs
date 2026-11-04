@@ -3,6 +3,7 @@ mod controllers;
 pub mod models;
 mod requests;
 pub mod seeders;
+mod taxonomy;
 
 pub struct BlogModule;
 
@@ -24,6 +25,12 @@ impl super::Module for BlogModule {
             .add("/posts/{slug}", get(controllers::show))
             .add("/posts/{slug}/comments", get(controllers::comments))
             .add("/categories", get(controllers::categories))
-            .add("/tags", get(controllers::tags))]
+            .add("/categories", post(taxonomy::create_category))
+            .add("/categories/{id}", patch(taxonomy::update_category))
+            .add("/categories/{id}", delete(taxonomy::delete_category))
+            .add("/tags", get(controllers::tags))
+            .add("/tags", post(taxonomy::create_tag))
+            .add("/tags/{id}", patch(taxonomy::update_tag))
+            .add("/tags/{id}", delete(taxonomy::delete_tag))]
     }
 }

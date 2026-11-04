@@ -1,15 +1,13 @@
 use loco_rs::prelude::*;
 
 use axum::http::StatusCode;
-use regex::Regex;
 use sea_orm::{PaginatorTrait, QueryOrder, QuerySelect, SqlErr};
 use serde_json::Value;
-use std::sync::LazyLock;
 
 use super::{
     controllers::{missing, public_post, validation, ListQuery, Paginated},
     models::post,
-    requests::{InputError, PostInput},
+    requests::{slugify, InputError, PostInput},
 };
 use crate::models::_entities::{categories, post_tags, posts, tags, users};
 
@@ -91,20 +89,6 @@ async fn validate_relations<C: ConnectionTrait>(db: &C, input: &PostInput) -> Wr
         return Err(WriteError::Relations);
     }
     Ok(())
-}
-
-fn slugify(value: &str) -> String {
-    static NON_SLUG: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new("[^a-z0-9]+").expect("valid slug regex"));
-    let slug = NON_SLUG
-        .replace_all(&value.trim().to_lowercase(), "-")
-        .trim_matches('-')
-        .to_owned();
-    if slug.is_empty() {
-        "item".to_owned()
-    } else {
-        slug
-    }
 }
 
 async fn resolve_slug<C: ConnectionTrait>(
