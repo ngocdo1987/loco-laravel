@@ -12,9 +12,6 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S5. Author write API (JWT) — POST `/api/posts` + `/api/me/posts` CRUD.
-      Source: routes.go protected block; ownership + slug-uniqueness rules in
-      `app/modules/blog/services/blog_service.go`
 - [ ] S6. Taxonomy write API — categories/tags CRUD (6 endpoints)
 - [ ] S7. Comments API — submit (pending), delete-own, moderation queue,
       moderate, delete-moderated (5 endpoints)
@@ -45,8 +42,6 @@ Monitor only — do not act.
 - Goravel's Module interface carries `Dependencies()`/enable-disable +
   `Seeders()`; `docs/modules.md` deliberately deferred them — revisit when
   blog lands (blog genuinely depends on auth)
-- Post HTML sanitization: S4 uses ammonia 4.2.4 on public responses;
-  S5 must also sanitize before persistence (bluemonday parity)
 - DB dialect: goravel=MySQL/uint IDs, loco=Postgres/i64 IDs; `carbon.DateTime`
   → `timestamp with time zone`; map types explicitly in S1
 - Goravel server-rendered forms use its own view helpers; port to Tera+i18n
@@ -80,6 +75,14 @@ Monitor only — do not act.
       clean MySQL migration and routes passed. Cargo dependency gate exception
       explicitly approved by the user. Commit 57d309e; merged directly into
       master at the user's explicit request.
+
+- [x] S5. Author write API (JWT) — create + own-posts CRUD, ownership,
+      slug uniqueness, transactional tags and HTML sanitization before saving.
+      MySQL-only LONGTEXT migration supports 100,000 characters and guards
+      lossy rollback. Independent verifier APPROVE; all 52 MySQL tests, fmt,
+      clippy, clean MySQL migration and routes passed. Migration exception and
+      maxFiles increase to 20 explicitly approved; 9 implementation files.
+      Commit a1bc4a4; merged directly into master at the user's explicit request.
 
 ## Recent Noise
 
