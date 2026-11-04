@@ -12,9 +12,6 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S8. Uploads API — `/api/uploads/images`, `/api/uploads/post-covers`,
-      `/api/me/posts/{id}/cover`. Decision: use loco `ctx.storage` (not the
-      goravel storage facade). Source: blog_service.go upload paths
 - [ ] S9. Web public pages — `/`, `/posts/{slug}`, `/categories/{slug}`,
       `/tags/{slug}` as Tera views under `assets/views/blog/`.
       Source: `resources/views/blog/` (public templates)
@@ -98,6 +95,21 @@ Monitor only — do not act.
       lost) and loop-gate passed; 5 files, no denylist exceptions (MySQL
       config kept uncommitted in worktrees, as in S4–S6). Commit f4060a9;
       merged directly into master at the user's explicit request.
+
+- [x] S8. Uploads API — three JWT endpoints: `/api/uploads/images` and
+      `/api/uploads/post-covers` (field `image`) plus
+      `/api/me/posts/{id}/cover` (field `cover_image`, persists
+      cover_image_url on the owned post). Loco storage wired in code via
+      `after_context` (local driver rooted at `storage/app/public`) since
+      `config/*.yaml` is denylisted; `DefaultBodyLimit` initializer (8 MB)
+      lifts axum's 2 MB multipart cap; content-sniffed jpeg/png/gif/webp
+      before the 5 MB check; url = `{proto}://{host}/storage/{path}`;
+      uuid filenames; `storage/` gitignored. Independent verifier APPROVE;
+      all 65 MySQL tests, fmt, clippy, clean MySQL migration, routes (+3,
+      none lost) and loop-gate passed; 8 files, no denylist exceptions.
+      Serving `/storage/*` statics deferred to S9/S10 (goravel wires it as a
+      web-level static route, not module API). Commit 198a21b; merged
+      directly into master at the user's explicit request.
 
 ## Recent Noise
 
