@@ -12,12 +12,11 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S9. Web public pages — `/`, `/posts/{slug}`, `/categories/{slug}`,
-      `/tags/{slug}` as Tera views under `assets/views/blog/`.
-      Source: `resources/views/blog/` (public templates)
 - [ ] S10. Web dashboard — posts CRUD + taxonomy + moderation forms
       (~15 endpoints). Split into S10a posts / S10b taxonomy+moderation if the
-      diff would exceed gate.yaml `maxFiles`.
+      diff would exceed gate.yaml `maxFiles`. Includes the deferred web
+      comment submit `POST /posts/{slug}/comments` (S9 renders its form) and
+      the S9 cosmetic note below.
 - [ ] S11. Port `tests/blog_test.go` → `tests/requests/blog_*.rs` — parity
       contract for S4–S7 (published-only reads, author-only drafts, pending
       comments, moderation rules, sanitization)
@@ -110,6 +109,23 @@ Monitor only — do not act.
       Serving `/storage/*` statics deferred to S9/S10 (goravel wires it as a
       web-level static route, not module API). Commit 198a21b; merged
       directly into master at the user's explicit request.
+
+- [x] S9. Web public pages — four Tera views under `assets/views/blog/`
+      (home/feed/post) served by `modules/blog/web.rs`: `/` blog home
+      (9-per-page view limit, search, pagination, sidebar),
+      `/categories/{slug}` + `/tags/{slug}` feeds (200 empty state for
+      unknown slugs), `/posts/{slug}` with ammonia-sanitized content,
+      approved-only comments and a cookie-auth (`auth_token` JWT) comment
+      form; `controllers.rs` feed/approved-comments logic extracted into
+      shared helpers (API behavior unchanged); starter `/` route replaced by
+      blog home (`/hello` kept, dead index.html removed). Independent
+      verifier APPROVE; all 68 MySQL tests, fmt, clippy, clean MySQL
+      migration, routes (+3 web, none lost) and loop-gate passed; 10 files,
+      no denylist exceptions. Deferred to S10: web comment submit
+      (`POST /posts/{slug}/comments` renders but 404s) and goravel's
+      per-handler "Invalid category/tag query." messages (cosmetic;
+      verifier note — status/page shape already match). Commit e1cb383;
+      merged directly into master at the user's explicit request.
 
 ## Recent Noise
 
