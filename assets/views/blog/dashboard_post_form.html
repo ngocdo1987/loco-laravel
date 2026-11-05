@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} | Goravel Blog</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; }
+    .post-card { min-height: 100%; }
+    .content-html img { max-width: 100%; height: auto; border-radius: .5rem; }
+    .editor-surface { min-height: 280px; border: 1px solid #ced4da; border-radius: .375rem; padding: .75rem; background: #fff; }
+    .editor-toolbar { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .5rem; }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="/">Goravel Blog</a>
+    <div class="d-flex gap-2 align-items-center">
+      <a class="btn btn-outline-light btn-sm" href="/dashboard">Dashboard</a>
+      {% if current_user %}
+        <form method="post" action="/logout" class="m-0"><button class="btn btn-warning btn-sm" type="submit">Logout</button></form>
+      {% else %}
+        <a class="btn btn-outline-light btn-sm" href="/login">Login</a><a class="btn btn-primary btn-sm" href="/register">Register</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+<main class="container py-4">
+{% if flash %}<div class="alert alert-success">{{ flash }}</div>{% endif %}
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<div class="d-flex flex-wrap gap-2 mb-4"><a class="btn btn-outline-primary" href="/dashboard/posts">Posts</a><a class="btn btn-outline-primary" href="/dashboard/categories">Categories</a><a class="btn btn-outline-primary" href="/dashboard/tags">Tags</a><a class="btn btn-outline-primary" href="/dashboard/comments">Comments</a><a class="btn btn-primary" href="/dashboard/posts/new">New post</a></div>
+<h1>{{ title }}</h1>{% if errors.form %}<div class="alert alert-danger">{{ errors.form }}</div>{% endif %}
+<form method="post" action="{{ action }}" enctype="multipart/form-data" data-post-form><input type="hidden" name="tag_ids_present" value="1">
+<div class="mb-3"><label class="form-label" for="title">Title</label><input id="title" name="title" class="form-control" value="{{ form.title }}" required maxlength="255">{% if errors.title %}<div class="text-danger small">{{ errors.title }}</div>{% endif %}</div>
+<div class="mb-3"><label class="form-label" for="slug">Slug</label><input id="slug" name="slug" class="form-control" value="{{ form.slug }}" maxlength="255">{% if errors.slug %}<div class="text-danger small">{{ errors.slug }}</div>{% endif %}</div>
+<div class="mb-3"><label class="form-label" for="excerpt">Excerpt</label><textarea id="excerpt" name="excerpt" class="form-control" rows="3" maxlength="500">{{ form.excerpt }}</textarea></div>
+<div class="mb-3"><label class="form-label" for="cover_image_url">Cover image URL</label><input id="cover_image_url" name="cover_image_url" class="form-control" value="{{ form.cover_image_url }}" maxlength="2048">{% if errors.cover_image_url %}<div class="text-danger small">{{ errors.cover_image_url }}</div>{% endif %}<label class="form-label mt-2" for="cover_image">Upload cover</label><input id="cover_image" type="file" name="cover_image" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp">{% if errors.cover_image %}<div class="text-danger small">{{ errors.cover_image }}</div>{% endif %}{% if form.cover_image_url %}<img class="img-fluid rounded border mt-2" style="max-height:180px" src="{{ form.cover_image_url }}" alt="">{% endif %}</div>
+<div class="mb-3"><label class="form-label">Content HTML</label><div class="editor-toolbar" data-editor-toolbar><button class="btn btn-sm btn-outline-secondary" type="button" data-command="bold"><strong>B</strong></button><button class="btn btn-sm btn-outline-secondary" type="button" data-command="italic"><em>I</em></button><button class="btn btn-sm btn-outline-secondary" type="button" data-command="heading">H2</button><button class="btn btn-sm btn-outline-secondary" type="button" data-command="bulletList">List</button><button class="btn btn-sm btn-outline-secondary" type="button" data-command="blockquote">Quote</button><button class="btn btn-sm btn-outline-secondary" type="button" data-command="link">Link</button><button class="btn btn-sm btn-outline-secondary" type="button" data-command="image">Image URL</button></div><div id="content-editor" class="editor-surface"></div><textarea id="content_html" name="content_html" class="visually-hidden">{{ form.content_html }}</textarea>{% if errors.content_html %}<div class="text-danger small">{{ errors.content_html }}</div>{% endif %}</div>
+<div class="row"><div class="col-md-6 mb-3"><label class="form-label" for="status">Status</label><select id="status" name="status" class="form-select"><option value="draft" {% if form.status == "draft" %}selected{% endif %}>Draft</option><option value="published" {% if form.status == "published" %}selected{% endif %}>Published</option></select></div><div class="col-md-6 mb-3"><label class="form-label" for="category_id">Category</label><select id="category_id" name="category_id" class="form-select"><option value="">No category</option>{% for category in categories %}<option value="{{ category.id }}" {% if category.id == form.category_id %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select>{% if errors.category_id %}<div class="text-danger small">{{ errors.category_id }}</div>{% endif %}</div></div>
+<fieldset class="mb-3"><legend class="h6">Tags</legend>{% for tag in form_tags %}<label class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="tag_ids" value="{{ tag.id }}" {% if tag.checked %}checked{% endif %}> {{ tag.name }}</label>{% endfor %}{% if errors.tag_ids %}<div class="text-danger small">{{ errors.tag_ids }}</div>{% endif %}</fieldset>
+<button class="btn btn-primary" type="submit">Save post</button></form>
+<script type="module">
+import { Editor } from 'https://esm.sh/@tiptap/core@3.23.6'
+import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.23.6'
+import Link from 'https://esm.sh/@tiptap/extension-link@3.23.6'
+import Image from 'https://esm.sh/@tiptap/extension-image@3.23.6'
+const textarea = document.querySelector('#content_html')
+const editor = new Editor({ element: document.querySelector('#content-editor'), content: textarea.value || '<p></p>', extensions: [StarterKit.configure({ link: false }), Link.configure({ openOnClick: false, autolink: true, linkOnPaste: true }), Image.configure({ allowBase64: false })], onUpdate: ({ editor }) => { textarea.value = editor.getHTML() } })
+document.querySelector('[data-post-form]').addEventListener('submit', () => { textarea.value = editor.getHTML() })
+document.querySelectorAll('[data-command]').forEach(button => button.addEventListener('click', () => { const c = button.dataset.command; if (c === 'bold') editor.chain().focus().toggleBold().run(); if (c === 'italic') editor.chain().focus().toggleItalic().run(); if (c === 'heading') editor.chain().focus().toggleHeading({ level: 2 }).run(); if (c === 'bulletList') editor.chain().focus().toggleBulletList().run(); if (c === 'blockquote') editor.chain().focus().toggleBlockquote().run(); if (c === 'link') { const url = window.prompt('Link URL', 'https://'); if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run() } if (c === 'image') { const url = window.prompt('Image URL', 'https://'); if (url) editor.chain().focus().setImage({ src: url.trim() }).run() } }))
+</script>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

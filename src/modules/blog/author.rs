@@ -59,7 +59,7 @@ fn parse(body: JsonBody, create: bool) -> std::result::Result<PostInput, InputEr
     PostInput::parse(value, create)
 }
 
-async fn owned<C: ConnectionTrait>(
+pub(super) async fn owned<C: ConnectionTrait>(
     db: &C,
     author_id: i64,
     id: i64,
@@ -137,7 +137,7 @@ async fn write_tags<C: ConnectionTrait>(db: &C, id: i64, input: &PostInput) -> W
     Ok(())
 }
 
-async fn create_post(
+pub(super) async fn create_post(
     db: &DatabaseConnection,
     author_id: i64,
     input: &PostInput,
@@ -166,7 +166,7 @@ async fn create_post(
     Ok(row)
 }
 
-async fn update_post(
+pub(super) async fn update_post(
     db: &DatabaseConnection,
     author_id: i64,
     id: i64,

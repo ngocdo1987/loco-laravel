@@ -67,7 +67,7 @@ fn public_url(headers: &HeaderMap, path: &str) -> String {
 }
 
 #[derive(Debug)]
-enum UploadError {
+pub(super) enum UploadError {
     Validation(&'static str, &'static str),
     Failed,
 }
@@ -83,6 +83,32 @@ impl UploadError {
                 .into_response(),
         }
     }
+}
+
+/// Validates content-sniffed type + size and stores the bytes through loco
+/// storage (shared by the upload API and the dashboard's form cover upload).
+pub(super) async fn store_image(
+    ctx: &AppContext,
+    headers: &HeaderMap,
+    directory: &str,
+    field: &'static str,
+    bytes: &axum::body::Bytes,
+) -> std::result::Result<(String, String), UploadError> {
+    let Some(extension) = sniff_image(bytes) else {
+        return Err(UploadError::Validation(
+            field,
+            "must be a jpeg, png, gif, or webp image",
+        ));
+    };
+    if bytes.len() > MAX_BYTES {
+        return Err(UploadError::Validation(field, "must not exceed 5 MB"));
+    }
+    let path = format!("{directory}/{}.{extension}", uuid::Uuid::new_v4());
+    if let Err(storage_error) = ctx.storage.upload(std::path::Path::new(&path), bytes).await {
+        tracing::error!(error = %storage_error, path, "upload failed");
+        return Err(UploadError::Failed);
+    }
+    Ok((public_url(headers, &path), path))
 }
 
 async fn upload_image(
@@ -114,25 +140,7 @@ async fn upload_image(
     let Some(bytes) = payload else {
         return Err(UploadError::Validation(field, "is required"));
     };
-    let Some(extension) = sniff_image(&bytes) else {
-        return Err(UploadError::Validation(
-            field,
-            "must be a jpeg, png, gif, or webp image",
-        ));
-    };
-    if bytes.len() > MAX_BYTES {
-        return Err(UploadError::Validation(field, "must not exceed 5 MB"));
-    }
-    let path = format!("{directory}/{}.{extension}", uuid::Uuid::new_v4());
-    if let Err(storage_error) = ctx
-        .storage
-        .upload(std::path::Path::new(&path), &bytes)
-        .await
-    {
-        tracing::error!(error = %storage_error, path, "upload failed");
-        return Err(UploadError::Failed);
-    }
-    Ok((public_url(headers, &path), path))
+    store_image(ctx, headers, directory, field, &bytes).await
 }
 
 /// `POST /api/uploads/images` — generic image upload.

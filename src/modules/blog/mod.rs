@@ -1,6 +1,7 @@
 mod author;
 mod comments;
 mod controllers;
+mod dashboard;
 pub mod models;
 mod requests;
 pub mod seeders;
@@ -53,8 +54,38 @@ impl super::Module for BlogModule {
             Routes::new()
                 .add("/", get(web::home))
                 .add("/posts/{slug}", get(web::show_post))
+                .add("/posts/{slug}/comments", post(web::submit_comment))
                 .add("/categories/{slug}", get(web::category))
-                .add("/tags/{slug}", get(web::tag)),
+                .add("/tags/{slug}", get(web::tag))
+                .add("/storage/{*path}", get(web::storage_asset)),
+            // goravel `RegisterWebRoutes`' auth-guarded dashboard group.
+            // (`GET /dashboard` itself stays the frozen auth module's
+            // post-login landing page — see the module docs.)
+            Routes::new()
+                .prefix("/dashboard")
+                .add("/posts", get(dashboard::posts))
+                .add("/posts/new", get(dashboard::new_post))
+                .add("/posts", post(dashboard::create_post))
+                .add("/posts/{id}/edit", get(dashboard::edit_post))
+                .add("/posts/{id}", post(dashboard::update_post))
+                .add("/posts/{id}/delete", post(dashboard::delete_post))
+                .add("/categories", get(dashboard::categories))
+                .add("/categories", post(dashboard::create_category))
+                .add("/categories/{id}", post(dashboard::update_category))
+                .add("/categories/{id}/delete", post(dashboard::delete_category))
+                .add("/tags", get(dashboard::tags))
+                .add("/tags", post(dashboard::create_tag))
+                .add("/tags/{id}", post(dashboard::update_tag))
+                .add("/tags/{id}/delete", post(dashboard::delete_tag))
+                .add("/comments", get(dashboard::moderation))
+                .add(
+                    "/posts/{id}/comments/{comment_id}",
+                    post(dashboard::moderate_comment),
+                )
+                .add(
+                    "/posts/{id}/comments/{comment_id}/delete",
+                    post(dashboard::delete_comment),
+                ),
         ]
     }
 }

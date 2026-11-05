@@ -1,7 +1,7 @@
 use loco_rs::prelude::*;
 
 use axum::extract::Query;
-use sea_orm::{Condition, PaginatorTrait, QueryOrder, QuerySelect, QueryTrait};
+use sea_orm::{Condition, DbErr, PaginatorTrait, QueryOrder, QuerySelect, QueryTrait};
 use serde::{Deserialize, Serialize};
 
 use super::models::{
@@ -161,6 +161,19 @@ pub(super) async fn feed(
     Ok((data, total))
 }
 
+/// A post owned by `author_id` (goravel `findOwnedPost`; `None` = not the
+/// caller's or missing — shared by the comment API and the web dashboard).
+pub(super) async fn owned_post(
+    db: &DatabaseConnection,
+    author_id: i64,
+    id: i64,
+) -> std::result::Result<Option<posts::Model>, DbErr> {
+    posts::Entity::find_by_id(id)
+        .filter(posts::Column::AuthorId.eq(author_id))
+        .one(db)
+        .await
+}
+
 /// Approved comments for a post (shared by `/api/posts/{slug}/comments` and
 /// the web post page). Returns the page rows and the total count.
 pub(super) async fn approved_comments(
@@ -183,6 +196,37 @@ pub(super) async fn approved_comments(
             .await?
             .ok_or(ModelError::EntityNotFound)?;
         data.push(CommentResponse::new(&row, &author, false));
+    }
+    Ok((data, total))
+}
+
+/// Moderation queue rows for one post, oldest first (goravel
+/// `OrderBy("created_at")`) — shared by the API queue
+/// (`/api/me/posts/{id}/comments`) and the web moderation page. Returns the
+/// page rows (with status) and the total count.
+pub(super) async fn moderation_comments(
+    db: &DatabaseConnection,
+    post_id: i64,
+    status: Option<&str>,
+    page: u64,
+    limit: u64,
+) -> Result<(Vec<CommentResponse>, u64)> {
+    let mut select = comments::Entity::find().filter(comments::Column::PostId.eq(post_id));
+    if let Some(status) = status.filter(|status| !status.is_empty()) {
+        select = select.filter(comments::Column::Status.eq(status));
+    }
+    let pager = select
+        .order_by_asc(comments::Column::CreatedAt)
+        .order_by_asc(comments::Column::Id)
+        .paginate(db, limit);
+    let total = pager.num_items().await?;
+    let mut data = Vec::new();
+    for row in pager.fetch_page(page - 1).await? {
+        let author = users::Entity::find_by_id(row.author_id)
+            .one(db)
+            .await?
+            .ok_or(ModelError::EntityNotFound)?;
+        data.push(CommentResponse::new(&row, &author, true));
     }
     Ok((data, total))
 }

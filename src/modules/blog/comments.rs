@@ -11,15 +11,16 @@
 use loco_rs::prelude::*;
 
 use axum::http::StatusCode;
-use sea_orm::{PaginatorTrait, QueryOrder};
 use serde_json::Value;
 
 use super::{
-    controllers::{missing, published, validation, ListQuery, Paginated},
+    controllers::{
+        missing, moderation_comments, owned_post, published, validation, ListQuery, Paginated,
+    },
     models::{comment, responses::CommentResponse},
     requests::{CommentInput, InputError, ModerationInput},
 };
-use crate::models::_entities::{comments, posts, users};
+use crate::models::_entities::{comments, users};
 
 type User = auth::JWTWithUser<users::Model>;
 type JsonBody = std::result::Result<Json<Value>, Error>;
@@ -49,17 +50,6 @@ fn moderation_body(body: JsonBody) -> std::result::Result<ModerationInput, Input
         Ok(Json(value)) => ModerationInput::parse(value),
         Err(_) => Err(InputError::Payload),
     }
-}
-
-async fn owned_post(
-    db: &DatabaseConnection,
-    author_id: i64,
-    id: i64,
-) -> Result<Option<posts::Model>> {
-    Ok(posts::Entity::find_by_id(id)
-        .filter(posts::Column::AuthorId.eq(author_id))
-        .one(db)
-        .await?)
 }
 
 /// `POST /api/posts/{slug}/comments` — submit a comment for moderation.
@@ -142,23 +132,7 @@ pub(super) async fn queue(
     if owned_post(&ctx.db, user.user.id, post_id).await?.is_none() {
         return missing();
     }
-    let mut select = comments::Entity::find().filter(comments::Column::PostId.eq(post_id));
-    if !status.is_empty() {
-        select = select.filter(comments::Column::Status.eq(status));
-    }
-    let pager = select
-        .order_by_asc(comments::Column::CreatedAt)
-        .order_by_asc(comments::Column::Id)
-        .paginate(&ctx.db, limit);
-    let total = pager.num_items().await?;
-    let mut data = Vec::new();
-    for row in pager.fetch_page(page - 1).await? {
-        let author = users::Entity::find_by_id(row.author_id)
-            .one(&ctx.db)
-            .await?
-            .ok_or(ModelError::EntityNotFound)?;
-        data.push(CommentResponse::new(&row, &author, true));
-    }
+    let (data, total) = moderation_comments(&ctx.db, post_id, Some(status), page, limit).await?;
     format::json(Paginated {
         data,
         page,

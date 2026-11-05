@@ -14,31 +14,37 @@ type User = auth::JWTWithUser<users::Model>;
 type JsonBody = std::result::Result<Json<Value>, Error>;
 
 #[derive(Clone, Copy)]
-enum Kind {
+pub(super) enum Kind {
     Category,
     Tag,
+}
+
+/// Classifies a taxonomy write failure into goravel's flash/message text
+/// (`None` = unexpected database error — log and use the generic message).
+pub(super) fn error_message(error: &DbErr) -> Option<&'static str> {
+    match error.sql_err() {
+        Some(SqlErr::UniqueConstraintViolation(_)) => Some("slug already exists"),
+        Some(SqlErr::ForeignKeyConstraintViolation(_)) => Some("taxonomy is assigned to a post"),
+        _ => None,
+    }
 }
 
 fn database_error(error: &DbErr) -> Result<Response> {
     if matches!(error, DbErr::RecordNotFound(_)) {
         return missing();
     }
-    let message = match error.sql_err() {
-        Some(SqlErr::UniqueConstraintViolation(_)) => "slug already exists",
-        Some(SqlErr::ForeignKeyConstraintViolation(_)) => "taxonomy is assigned to a post",
-        _ => {
-            tracing::error!(%error, "taxonomy write failed");
-            return format::render()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .json(data!({"message": "Unable to process blog request"}));
-        }
+    let Some(message) = error_message(error) else {
+        tracing::error!(%error, "taxonomy write failed");
+        return format::render()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .json(data!({"message": "Unable to process blog request"}));
     };
     format::render()
         .status(StatusCode::CONFLICT)
         .json(data!({"message": message}))
 }
 
-async fn save(
+pub(super) async fn save(
     db: &DatabaseConnection,
     kind: Kind,
     id: Option<i64>,
@@ -107,16 +113,29 @@ async fn write(ctx: &AppContext, kind: Kind, id: Option<i64>, body: JsonBody) ->
     }
 }
 
-async fn destroy(ctx: &AppContext, kind: Kind, id: i64) -> Result<Response> {
+/// Deletes a taxonomy row by id; `Ok(false)` = no such row (goravel's
+/// `ErrBlogNotFound`), `Err` carries the RESTRICT/constraint failures.
+pub(super) async fn remove(
+    db: &DatabaseConnection,
+    kind: Kind,
+    id: i64,
+) -> std::result::Result<bool, DbErr> {
     // Let the existing RESTRICT foreign keys enforce this atomically, including
     // races with post/tag assignment. No check-then-delete window is needed.
     let result = match kind {
-        Kind::Category => categories::Entity::delete_by_id(id).exec(&ctx.db).await,
-        Kind::Tag => tags::Entity::delete_by_id(id).exec(&ctx.db).await,
+        Kind::Category => categories::Entity::delete_by_id(id).exec(db).await,
+        Kind::Tag => tags::Entity::delete_by_id(id).exec(db).await,
     };
     match result {
-        Ok(result) if result.rows_affected == 0 => missing(),
-        Ok(_) => format::render().status(StatusCode::NO_CONTENT).empty(),
+        Ok(result) => Ok(result.rows_affected > 0),
+        Err(error) => Err(error),
+    }
+}
+
+async fn destroy(ctx: &AppContext, kind: Kind, id: i64) -> Result<Response> {
+    match remove(&ctx.db, kind, id).await {
+        Ok(true) => format::render().status(StatusCode::NO_CONTENT).empty(),
+        Ok(false) => missing(),
         Err(error) => database_error(&error),
     }
 }

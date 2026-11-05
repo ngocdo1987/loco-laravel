@@ -28,6 +28,8 @@
   </div>
 </nav>
 <main class="container py-4">
+{% if flash %}<div class="alert alert-success">{{ flash }}</div>{% endif %}
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 
 <article class="bg-white rounded shadow-sm p-4 mb-4">
   {% if post.cover_image_url %}<img class="img-fluid rounded mb-3" src="{{ post.cover_image_url }}" alt="">{% endif %}
