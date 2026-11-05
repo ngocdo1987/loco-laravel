@@ -12,11 +12,6 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S10. Web dashboard — posts CRUD + taxonomy + moderation forms
-      (~15 endpoints). Split into S10a posts / S10b taxonomy+moderation if the
-      diff would exceed gate.yaml `maxFiles`. Includes the deferred web
-      comment submit `POST /posts/{slug}/comments` (S9 renders its form) and
-      the S9 cosmetic note below.
 - [ ] S11. Port `tests/blog_test.go` → `tests/requests/blog_*.rs` — parity
       contract for S4–S7 (published-only reads, author-only drafts, pending
       comments, moderation rules, sanitization)
@@ -126,6 +121,30 @@ Monitor only — do not act.
       per-handler "Invalid category/tag query." messages (cosmetic;
       verifier note — status/page shape already match). Commit e1cb383;
       merged directly into master at the user's explicit request.
+
+- [x] S10. Web dashboard — 17 `/dashboard/**` routes in
+      `modules/blog/dashboard.rs`: posts CRUD (multipart form + optional
+      cover upload through the S8 storage path), taxonomy
+      create/rename/delete, moderation queue + approve/reject/delete; plus
+      the S9-deferred `POST /posts/{slug}/comments` (pending queue, fixed
+      goravel validation/error flash texts), the S8-deferred
+      `GET /storage/{*path}` static serving (traversal-guarded), and the S9
+      cosmetic fix (per-handler "Invalid feed/category/tag query."
+      messages). Flash rides two cookies (`blog_flash`/`blog_error`, set on
+      redirect, expired on next render) — loco has no session; forms carry
+      no CSRF token (frozen auth module owns the session surface). Multipart
+      post form is folded into the API's `PostInput::parse` so validation
+      rules have exactly one implementation; dashboard writes reuse the
+      author API's transactional writers, taxonomy `save`/`remove`, and the
+      comment query helpers extracted into `controllers.rs` (API behavior
+      byte-identical). Deliberate deviation: `GET /dashboard` itself stays
+      the frozen auth module's post-login landing page (it already owned the
+      route; dashboard lives under `/dashboard/posts` etc.). One field error
+      per form re-render (single-error parser) vs goravel's per-field map.
+      Independent verifier APPROVE; all 77 MySQL tests, fmt, clippy, clean
+      MySQL migration, routes (+19, none lost) and loop-gate passed; 14
+      files, no denylist exceptions. Commit e931488; merged directly into
+      master at the user's explicit request.
 
 ## Recent Noise
 
