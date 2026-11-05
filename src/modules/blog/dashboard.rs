@@ -42,9 +42,11 @@ use super::{
 };
 use crate::models::_entities::{categories, comments, posts, tags, users};
 
-/// The values of one rendered post form (goravel `postFormData`).
+/// The values of one rendered post form (goravel `postFormData`); shared
+/// with the author API's multipart create/update bodies (goravel binds the
+/// same `PostWriteRequest` from `form` + `json` tags alike).
 #[derive(Default)]
-struct PostForm {
+pub(super) struct PostForm {
     title: String,
     slug: String,
     excerpt: String,
@@ -53,7 +55,10 @@ struct PostForm {
     status: String,
     category_id: String,
     tag_ids: Vec<String>,
-    cover: Option<Bytes>,
+    pub(super) cover: Option<Bytes>,
+    /// The field names actually submitted (goravel's `ctx.Request().All()`
+    /// keys — the API's partial-update semantics).
+    fields: std::collections::HashSet<String>,
 }
 
 /// A urlencoded `{ name }` form (taxonomy create/update).
@@ -118,7 +123,7 @@ async fn own_posts(
 
 /// Collects the post form's multipart fields (goravel `viewPostInput` reads
 /// the same inputs; `cover_image` only counts when a file was chosen).
-async fn post_form(multipart: &mut Multipart) -> PostForm {
+pub(super) async fn post_form(multipart: &mut Multipart) -> PostForm {
     let mut form = PostForm::default();
     while let Ok(Some(part)) = multipart.next_field().await {
         let Some(name) = part.name().map(str::to_owned) else {
@@ -129,6 +134,7 @@ async fn post_form(multipart: &mut Multipart) -> PostForm {
                 if let Ok(value) = part.text().await {
                     form.tag_ids.push(value);
                 }
+                form.fields.insert("tag_ids".to_owned());
             }
             "cover_image" => {
                 let chosen = part.file_name().is_some_and(|name| !name.is_empty());
@@ -148,13 +154,82 @@ async fn post_form(multipart: &mut Multipart) -> PostForm {
                         "content_html" => form.content_html = value,
                         "status" => form.status = value,
                         "category_id" => form.category_id = value,
-                        _ => {}
+                        _ => continue,
                     }
+                    form.fields.insert(name);
                 }
             }
         }
     }
     form
+}
+
+/// Builds the API's partial-update payload value from a submitted form:
+/// only the submitted keys, identifiers validated (goravel
+/// `ValidateUpdatePost`'s `Fields` come from the submitted keys —
+/// `ctx.Request().All()` — plus the `cover_image` file marker).
+pub(super) fn submitted_value(form: &PostForm) -> std::result::Result<Value, InputError> {
+    let mut object = serde_json::Map::new();
+    let submitted = |key: &str| form.fields.contains(key);
+    if submitted("title") {
+        object.insert("title".to_owned(), serde_json::json!(form.title));
+    }
+    if submitted("slug") {
+        object.insert("slug".to_owned(), serde_json::json!(form.slug));
+    }
+    if submitted("excerpt") {
+        object.insert("excerpt".to_owned(), serde_json::json!(form.excerpt));
+    }
+    if submitted("cover_image_url") {
+        object.insert(
+            "cover_image_url".to_owned(),
+            serde_json::json!(form.cover_image_url),
+        );
+    }
+    if submitted("content_html") {
+        object.insert(
+            "content_html".to_owned(),
+            serde_json::json!(form.content_html),
+        );
+    }
+    if submitted("status") {
+        object.insert("status".to_owned(), serde_json::json!(form.status));
+    }
+    if submitted("category_id") {
+        let id = match form.category_id.trim() {
+            "" => None,
+            raw => match raw.parse::<i64>() {
+                Ok(id) if id != 0 => Some(id),
+                _ => {
+                    return Err(InputError::Field(
+                        "category_id",
+                        "must be a valid category identifier",
+                    ))
+                }
+            },
+        };
+        object.insert("category_id".to_owned(), serde_json::json!(id));
+    }
+    if submitted("tag_ids") {
+        let mut tag_ids = Vec::new();
+        for raw in &form.tag_ids {
+            let raw = raw.trim();
+            if raw.is_empty() {
+                continue;
+            }
+            match raw.parse::<i64>() {
+                Ok(id) if id != 0 => tag_ids.push(id),
+                _ => {
+                    return Err(InputError::Field(
+                        "tag_ids",
+                        "must contain unique valid tag identifiers",
+                    ))
+                }
+            }
+        }
+        object.insert("tag_ids".to_owned(), serde_json::json!(tag_ids));
+    }
+    Ok(Value::Object(object))
 }
 
 /// Validates the form into the API's `PostInput` (goravel `viewPostInput` +
@@ -468,6 +543,7 @@ pub(super) async fn edit_post(
             .unwrap_or_default(),
         tag_ids: response.tags.iter().map(|tag| tag.id.to_string()).collect(),
         cover: None,
+        fields: std::collections::HashSet::default(),
     };
     let checked: Vec<i64> = response.tags.iter().map(|tag| tag.id).collect();
     render_post_form(

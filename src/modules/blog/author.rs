@@ -1,18 +1,20 @@
 use loco_rs::prelude::*;
 
-use axum::http::StatusCode;
+use axum::extract::{FromRequest, Multipart, Request};
+use axum::http::{HeaderMap, StatusCode};
 use sea_orm::{PaginatorTrait, QueryOrder, QuerySelect, SqlErr};
 use serde_json::Value;
 
 use super::{
     controllers::{missing, public_post, validation, ListQuery, Paginated},
+    dashboard::{post_form, submitted_value, PostForm},
     models::post,
     requests::{slugify, InputError, PostInput},
+    uploads::store_image,
 };
 use crate::models::_entities::{categories, post_tags, posts, tags, users};
 
 type Author = auth::JWTWithUser<users::Model>;
-type JsonBody = std::result::Result<Json<Value>, Error>;
 pub(super) type WriteResult<T> = std::result::Result<T, WriteError>;
 
 #[derive(Debug)]
@@ -54,9 +56,77 @@ impl WriteError {
     }
 }
 
-fn parse(body: JsonBody, create: bool) -> std::result::Result<PostInput, InputError> {
-    let Json(value) = body.map_err(|_| InputError::Payload)?;
-    PostInput::parse(value, create)
+/// goravel binds the write endpoints' `PostWriteRequest` from JSON and
+/// multipart form bodies alike (`form` + `json` tags); this dispatcher
+/// mirrors the split (content-type `multipart/form-data` → form fields +
+/// optional `cover_image` file part, anything else → JSON).
+enum PostPayload {
+    Json(Value),
+    Form(Box<PostForm>),
+}
+
+async fn post_payload(request: Request) -> std::result::Result<PostPayload, InputError> {
+    let multipart = request
+        .headers()
+        .get(axum::http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| {
+            value
+                .to_ascii_lowercase()
+                .starts_with("multipart/form-data")
+        });
+    if multipart {
+        let mut multipart = Multipart::from_request(request, &())
+            .await
+            .map_err(|_| InputError::Payload)?;
+        Ok(PostPayload::Form(Box::new(post_form(&mut multipart).await)))
+    } else {
+        let Json(value) = Json::<Value>::from_request(request, &())
+            .await
+            .map_err(|_| InputError::Payload)?;
+        Ok(PostPayload::Json(value))
+    }
+}
+
+/// Parses the payload into a `PostInput`, uploading an optional multipart
+/// cover first (goravel `Store`/`Update`: validate, then `uploadOptionalImage`;
+/// the stored URL overrides any text `cover_image_url` field, and marks the
+/// field present for partial updates).
+async fn write_input(
+    ctx: &AppContext,
+    headers: &HeaderMap,
+    request: Request,
+    create: bool,
+) -> std::result::Result<PostInput, Response> {
+    let form = match post_payload(request).await {
+        Ok(PostPayload::Json(value)) => {
+            return PostInput::parse(value, create).map_err(InputError::response)
+        }
+        Ok(PostPayload::Form(form)) => form,
+        Err(error) => return Err(error.response()),
+    };
+    let mut value = submitted_value(&form).map_err(InputError::response)?;
+    // A submitted cover file marks the column present before parsing
+    // (goravel's `File("cover_image")` check), so cover-only partial
+    // updates pass the "at least one field" gate.
+    if form.cover.is_some() {
+        if let Some(object) = value.as_object_mut() {
+            object
+                .entry("cover_image_url".to_owned())
+                .or_insert_with(|| serde_json::json!(""));
+        }
+    }
+    let mut input = PostInput::parse(value, create).map_err(InputError::response)?;
+    if let Some(bytes) = &form.cover {
+        match store_image(ctx, headers, "uploads/post-covers", "cover_image", bytes).await {
+            Ok((url, _)) => {
+                input.cover_image_url = url;
+                input.fields.insert("cover_image_url".to_owned());
+            }
+            Err(error) => return Err(error.response()),
+        }
+    }
+    Ok(input)
 }
 
 pub(super) async fn owned<C: ConnectionTrait>(
@@ -244,11 +314,12 @@ pub(super) async fn update_cover(
 pub(super) async fn store(
     author: Author,
     State(ctx): State<AppContext>,
-    body: JsonBody,
+    headers: HeaderMap,
+    request: Request,
 ) -> Result<Response> {
-    let input = match parse(body, true) {
+    let input = match write_input(&ctx, &headers, request, true).await {
         Ok(input) => input,
-        Err(error) => return Ok(error.response()),
+        Err(response) => return Ok(response),
     };
     let row = match create_post(&ctx.db, author.user.id, &input).await {
         Ok(row) => row,
@@ -314,12 +385,13 @@ pub(super) async fn show(
 pub(super) async fn update(
     author: Author,
     State(ctx): State<AppContext>,
+    headers: HeaderMap,
     Path(id): Path<i64>,
-    body: JsonBody,
+    request: Request,
 ) -> Result<Response> {
-    let input = match parse(body, false) {
+    let input = match write_input(&ctx, &headers, request, false).await {
         Ok(input) => input,
-        Err(error) => return Ok(error.response()),
+        Err(response) => return Ok(response),
     };
     let row = match update_post(&ctx.db, author.user.id, id, &input).await {
         Ok(row) => row,

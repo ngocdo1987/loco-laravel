@@ -73,7 +73,7 @@ pub(super) enum UploadError {
 }
 
 impl UploadError {
-    fn response(self) -> Response {
+    pub(super) fn response(self) -> Response {
         match self {
             Self::Validation(field, message) => controllers::validation(field, message),
             Self::Failed => (
