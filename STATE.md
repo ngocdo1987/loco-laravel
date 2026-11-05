@@ -10,10 +10,11 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 ## High Priority
 
-Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
-
-- [ ] S12. DECISION — auth parity: goravel has `GET /api/users`; loco auth is
-      a deliberate superset otherwise. Record decision here; PR only if "add".
+**Queue empty — S1–S12 all merged. Migration complete.** Next step is a
+human decision: switch this repo to daily-triage (L1) upkeep per LOOP.md
+("After the migration") — keep STATE.md, loop-run-log.md, loop-budget.md.
+The pre-existing clippy `--all-targets` debt (Watch List) is the obvious
+candidate for the first L1 item.
 
 ## Watch List
 
@@ -165,6 +166,19 @@ Monitor only — do not act.
       clippy, clean MySQL migration, routes (identical — no new routes) and
       loop-gate passed; 5 files, no denylist exceptions. Commit 8fff050;
       merged directly into master at the user's explicit request.
+
+- [x] S12. DECISION — auth parity, resolved WITHOUT a PR (per this slice's
+      own rule "PR only if 'add'"). Evidence: goravel's `GET /api/users`
+      (`AuthController.Index`) is a scaffold stub returning a static
+      `{"Hello": "Goravel"}` JSON — no user data, no auth middleware, used
+      by nothing in the goravel codebase. Loco's frozen auth module remains
+      the deliberate superset (register/verify/login/forgot/reset/current/
+      magic-link×2/resend + web pages + JWT cookie); the only surface
+      difference is that stub. Decision (human, via decision handshake):
+      **do not add** — porting a hello-world placeholder has no value and
+      the natural home would be the denylisted `src/modules/auth/**`.
+      Decision-only slice: no worktree, no code changes, no verifier run.
+
 
 
 ## Recent Noise
