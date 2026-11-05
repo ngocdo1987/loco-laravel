@@ -12,9 +12,6 @@ repo (Rust/Loco). Module structure and auth are already done — see "Done".
 
 Work top-down — S1 first. One slice = one worktree = one PR = one independent verifier pass. Split a slice before coding if it can't fit one PR.
 
-- [ ] S11. Port `tests/blog_test.go` → `tests/requests/blog_*.rs` — parity
-      contract for S4–S7 (published-only reads, author-only drafts, pending
-      comments, moderation rules, sanitization)
 - [ ] S12. DECISION — auth parity: goravel has `GET /api/users`; loco auth is
       a deliberate superset otherwise. Record decision here; PR only if "add".
 
@@ -145,6 +142,30 @@ Monitor only — do not act.
       MySQL migration, routes (+19, none lost) and loop-gate passed; 14
       files, no denylist exceptions. Commit e931488; merged directly into
       master at the user's explicit request.
+
+- [x] S11. Parity contract — `tests/blog_test.go` ported to
+      `tests/requests/blog_parity.rs`: the full goravel flow (401 anonymous,
+      image + cover uploads, multipart create with inline cover, sanitized
+      create, draft 404, publish, filtered feed, pending comment hidden
+      until approved, taxonomy delete 409) plus a cover-only multipart
+      PATCH test, against the parity suite's own users (created in DB with
+      the same hash as Goravel's UserSeeder; loco `/api/auth/login` stands
+      in for goravel `/api/login` — frozen auth module shape). Porting it
+      exposed a real gap: goravel's write endpoints bind `PostWriteRequest`
+      from `form` + `json` tags alike, so `POST /api/posts` and
+      `PATCH /api/me/posts/{id}` also accept multipart bodies with an
+      optional `cover_image` file; `author.rs` now dispatches on
+      content-type (JSON path unchanged — same `PostInput::parse`),
+      collecting the form through S10's shared `dashboard::post_form` and
+      uploading through `uploads::store_image`; a cover file marks
+      `cover_image_url` present before parsing so cover-only patches pass
+      the at-least-one-field gate (goravel's `File("cover_image")` check).
+      Independent verifier APPROVE (assertion-by-assertion comparison with
+      the Go suite; PNG fixture byte-identical); all 79 MySQL tests, fmt,
+      clippy, clean MySQL migration, routes (identical — no new routes) and
+      loop-gate passed; 5 files, no denylist exceptions. Commit 8fff050;
+      merged directly into master at the user's explicit request.
+
 
 ## Recent Noise
 
