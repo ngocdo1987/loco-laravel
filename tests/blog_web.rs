@@ -142,3 +142,45 @@ async fn post_page_renders_sanitized_content_and_approved_comments() {
     })
     .await;
 }
+
+#[tokio::test]
+#[serial]
+async fn home_and_feed_show_flash_alert_once() {
+    request::<App, _, _>(|request, ctx| async move {
+        seed(&ctx).await;
+        // A flash cookie rides in, renders goravel's alert, and is expired.
+        let response = request
+            .get("/")
+            .add_header("cookie", "blog_flash=WelcomeBack")
+            .await;
+        response.assert_status_ok();
+        let text = response.text();
+        assert!(
+            text.contains("alert alert-success") && text.contains("WelcomeBack"),
+            "{text}"
+        );
+        let expired = response
+            .headers()
+            .get_all("set-cookie")
+            .iter()
+            .filter_map(|value| value.to_str().ok())
+            .any(|value| value.starts_with("blog_flash=") && value.contains("Max-Age=0"));
+        assert!(expired, "flash must be cleared on render");
+
+        let response = request.get("/").await;
+        assert!(!response.text().contains("WelcomeBack"));
+
+        // The category feed carries the error alert the same way.
+        let response = request
+            .get("/categories/engineering")
+            .add_header("cookie", "blog_error=SomethingWentWrong")
+            .await;
+        response.assert_status_ok();
+        let text = response.text();
+        assert!(
+            text.contains("alert alert-danger") && text.contains("SomethingWentWrong"),
+            "{text}"
+        );
+    })
+    .await;
+}

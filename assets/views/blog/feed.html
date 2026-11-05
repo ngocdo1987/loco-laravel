@@ -28,6 +28,8 @@
   </div>
 </nav>
 <main class="container py-4">
+{% if flash %}<div class="alert alert-success">{{ flash }}</div>{% endif %}
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 
 <section class="mb-4">
   <h1>{{ title }}</h1><p class="text-body-secondary">{{ description }}</p>

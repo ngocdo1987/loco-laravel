@@ -193,7 +193,7 @@ async fn render_feed(
     let user = current_user
         .as_ref()
         .map(|user| serde_json::json!({"name": user.name}));
-    format::render().view(
+    render_flash(
         v,
         template,
         data!({
@@ -214,7 +214,9 @@ async fn render_feed(
             "next_page": page + 1,
             "current_user": user,
         }),
+        jar,
     )
+    .await
 }
 
 /// `GET /` — blog home feed.
